@@ -13,6 +13,8 @@ class CNN:
         num_features = 314
         conv1_channels = 32
         conv2_channels = 64
+        kernel_1_size = [10, 10]
+        kernel_2_size = [5, 5]
 
         # REMEMBER: time is the first axis
         self.x = tf.placeholder(tf.float32, shape=(None, n_time_steps, num_features, 1), name="x")
@@ -20,15 +22,17 @@ class CNN:
 
         self.y = tf.placeholder(tf.float32, shape=(None, n_time_steps), name="labels")
 
-        self.conv1 = tf.layers.conv2d(self.x, filters=conv1_channels, kernel_size=[5, 5], padding="same",
+        self.conv1 = tf.layers.conv2d(self.x, filters=conv1_channels, kernel_size=kernel_1_size, padding="same",
                                       activation=tf.nn.relu,
                                       name='conv1')
         self.conv1_kernel = tf.get_default_graph().get_tensor_by_name('conv1/kernel:0')
         tf.summary.image("conv1 kernel", tf.transpose(self.conv1_kernel, (3, 0, 1, 2)))
         self.pool1 = tf.layers.max_pooling2d(self.conv1, pool_size=[2, 2], strides=2)
 
-        self.conv2 = tf.layers.conv2d(self.pool1, filters=conv2_channels, kernel_size=[5, 5], padding="same",
+        self.conv2 = tf.layers.conv2d(self.pool1, filters=conv2_channels, kernel_size=kernel_2_size, padding="same",
                                       activation=tf.nn.relu, name='conv2')
+        self.conv2_kernel = tf.get_default_graph().get_tensor_by_name('conv2/kernel:0')
+        tf.summary.image("conv2 kernel", tf.expand_dims(tf.reshape(tf.transpose(self.conv2_kernel, (3, 2, 0, 1)), [-1] + kernel_2_size), axis=3))
         self.pool2 = tf.layers.max_pooling2d(self.conv2, pool_size=[2, 2], strides=2)
 
         w = self.pool2.get_shape()[1]
@@ -50,7 +54,7 @@ class CNN:
             tf.summary.histogram(var.name + "/gradient", grad)
 
         self.global_step = tf.Variable(0, trainable=False, name="global_step")
-        self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
         self.opt = self.optimizer.minimize(loss=self.loss, global_step=self.global_step)
 
 
@@ -150,13 +154,14 @@ def train(args):
             batch_x = fixed_length_x[batch_0:batch_0+batch_size]
             batch_y = fixed_length_labels[batch_0:batch_0+batch_size]
             feed_dict = {m.x: batch_x, m.y: batch_y}
-            ops = [m.global_step, summaries, m.loss, m.y_hat, m.opt]
-            step, s, loss, y_hat, _ = sess.run(ops, feed_dict=feed_dict)
+            ops = [m.global_step, summaries, m.loss, m.y_hat, m.opt, m.conv1_kernel]
+            step, s, loss, y_hat, _, conv1_kernel = sess.run(ops, feed_dict=feed_dict)
 
             if j % args.summary_frequency == 0:
                 if args.log:
                     writer.add_summary(s, step)
 
+                print(conv1_kernel)
                 print(j, loss)
 
             if args.log:

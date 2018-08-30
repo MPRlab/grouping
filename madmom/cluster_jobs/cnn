@@ -13,7 +13,7 @@ MYUSER=$(whoami)
 LOCALDIR=/tmp
 PROJDIR=$PWD
 INDIR=indir
-CHECKPOINT_DIR=August_24_22\:55\:30/August_30_00\:44\:01/August_30_00\:48\:43/
+CHECKPOINT_DIR=
 DATADIR=~/data/grouping/cnn/$CHECKPOINT_DIR
 
 # or another folder where you want your data to be stored
@@ -34,10 +34,11 @@ cp -r $DATADIR $INDIR
 
 # Execute program (this also writes files in work dir)
 source ~/Projects/grouping/venv/bin/activate
-./bin/RhythmicGroupingCNN train data/train.npz --log --epocs 1000 -f 10 --checkpoint $INDIR/rhythmic_grouping_cnn.ckpt
+#./bin/RhythmicGroupingCNN train data/train.npz --log --epocs 2000 -f 10 --checkpoint $INDIR/rhythmic_grouping_cnn.ckpt
+./bin/RhythmicGroupingCNN train data/train.npz --log --epocs 2000 -f 10
 
 # Transfer generated files into home directory
 cp -r log_data/* $DATADIR
 
 # Cleanup
-#rm -r $WORKDIR
+rm -r $WORKDIR
