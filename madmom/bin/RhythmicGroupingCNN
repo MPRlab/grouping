@@ -44,7 +44,7 @@ class CNN:
 
         self.binary_y_hat = tf.argmax(self.y_hat, axis=1, name='binary_y_hat')
 
-        self.loss = tf.reduce_mean(self.y_hat, name='mean_loss')
+        self.loss = tf.reduce_mean(self.y_hat - self.y, name='mean_loss')
 
         tf.summary.scalar("loss", self.loss)
 

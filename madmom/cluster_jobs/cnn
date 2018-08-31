@@ -35,7 +35,7 @@ cp -r $DATADIR $INDIR
 # Execute program (this also writes files in work dir)
 source ~/Projects/grouping/venv/bin/activate
 #./bin/RhythmicGroupingCNN train data/train.npz --log --epocs 2000 -f 10 --checkpoint $INDIR/rhythmic_grouping_cnn.ckpt
-./bin/RhythmicGroupingCNN train data/train.npz --log --epocs 2000 -f 10
+./bin/RhythmicGroupingCNN train data/train.npz --log --epocs 1500 -f 10
 
 # Transfer generated files into home directory
 cp -r log_data/* $DATADIR
