@@ -13,7 +13,7 @@ class CNN:
         num_features = 314
         conv1_channels = 32
         conv2_channels = 64
-        kernel_1_size = [10, 10]
+        kernel_1_size = [5, 5]
         kernel_2_size = [5, 5]
 
         # REMEMBER: time is the first axis
@@ -59,7 +59,7 @@ class CNN:
 
 
 def main():
-    DEFAULT_TIME_STEPS = 50
+    DEFAULT_TIME_STEPS = 15
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
