@@ -187,7 +187,6 @@ def test(args):
     y_hat_time_range = range(args.time_steps, x_test.shape[1])
     inputs_per_sample = x_test.shape[1] - args.time_steps
     sample_x = np.ndarray((inputs_per_sample, args.time_steps, x_test.shape[2], 1))
-    sample_labels = np.ndarray((inputs_per_sample, args.time_steps))
 
     for sample_idx in range(num_samples_to_plot):
         # for each sample, step over each args.time_steps chunk and compute y_hat
@@ -195,9 +194,8 @@ def test(args):
         for i, t1 in enumerate(y_hat_time_range):
             t0 = t1 - args.time_steps
             sample_x[i] = x_test[sample_idx, t0:t1, :]
-            sample_labels[i] = labels_test[sample_idx, t0:t1]
 
-        y_hat, loss = sess.run([m.y_hat, m.loss], feed_dict={m.x: sample_x, m.y: sample_labels})
+        y_hat, loss = sess.run([m.y_hat, m.loss], feed_dict={m.x: sample_x, m.y: labels_test[sample_idx]})
 
         print("Test Loss", loss)
         plt.figure()
