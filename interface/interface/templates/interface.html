@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
   <link rel="stylesheet" href="{{url_for('static', filename='common.css')}}"/>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-  <script src="https://cdn.rawgit.com/konvajs/konva/1.7.6/konva.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/konva/1.7.6/konva.min.js" integrity="sha384-+wkFXkKLX9FWntU+BY/fkF3SPw4V3rRSyWf/w4X+v3PygPeL+lTYLQVoto/5ZckK" crossorigin="anonymous"></script>
   <script src="{{ url_for('static', filename='mousetrap.min.js') }}"></script>
   <script src="{{url_for('static', filename='common.js')}}"></script>
   <meta charset="UTF-8">
@@ -68,20 +68,20 @@
       </ul>
       <br>
       Labeler ID
-      <code>{{labeler_id|safe}}</code>
+      <code>{{labeler_id}}</code>
     </div>
   </div>
 </div>
 
-<div id="snackbar">Welcome Labeler {{labeler_id|safe}}</div>
+<div id="snackbar">Welcome Labeler {{labeler_id}}</div>
 
 </body>
 
 <script>
-  let samples = {{samples|safe}};
-  let experiment_id = "{{experiment_id|safe}}";
-  let assignment_id = "{{assignment_id|safe}}";
-  let next_href = "{{next_href|safe}}";
+  let samples = {{samples|tojson}};
+  let experiment_id = {{experiment_id|tojson}};
+  let assignment_id = {{assignment_id|tojson}};
+  let next_href = {{next_href|tojson}};
 </script>
 <script src="{{url_for('static', filename='interface.js')}}"></script>
 

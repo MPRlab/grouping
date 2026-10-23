@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import shutil
 import socket
 import sqlite3
@@ -8,9 +9,9 @@ from collections import OrderedDict
 from datetime import datetime
 
 import click
-import numpy as np
-import requests
+import hmac
 from colorama import init, Fore, Style
+from functools import wraps
 from flask import Flask, render_template, g, request, Response, url_for, redirect, make_response
 
 app = Flask(__name__)
@@ -18,12 +19,12 @@ app.config.from_object(__name__)
 
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, 'db', 'interface.db'),
-    SECRET_KEY='C796D37C6D491E8F0C6E9B83EED34C15C0F377F9F0F3CBB3216FBBF776DA6325',
-    USERNAME='admin',
-    PASSWORD='password'
+    # secrets come from the environment, never from source control
+    SECRET_KEY=os.environ.get('GROUPING_SECRET_KEY') or os.urandom(32),
+    USERNAME=os.environ.get('GROUPING_ADMIN_USERNAME'),
+    PASSWORD=os.environ.get('GROUPING_ADMIN_PASSWORD'),
 ))
 
-DEFAULT_SAMPLES_PER_PARTICIPANT = 500
 SAMPLES_URL_PREFIX = 'https://mprlab.wpi.edu/'
 SAMPLES_ROOT = '/var/www/html/grouping'
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))  # refers to application_top
@@ -32,6 +33,43 @@ NO_LABELER_ID = "NO_LABELER_ID"
 NOT_MTURK = "NO_MTURK"
 EXPERIMENT_ID_NOT_AVAILABLE = "EXPERIMENT_ID_NOT_AVAILABLE"
 LABELER_ID_COOKIE_KEY = 'labeler_id'
+
+
+def get_labeler_id_cookie():
+    """ Returns the labeler id from the cookie, or None if it is missing or not a valid UUID """
+    labeler_id = request.cookies.get(LABELER_ID_COOKIE_KEY)
+    if labeler_id is None:
+        return None
+    try:
+        return str(uuid.UUID(labeler_id))
+    except ValueError:
+        return None
+
+
+def set_labeler_id_cookie(resp, labeler_id):
+    if app.debug:
+        max_age_seconds = None  # when debugging, delete cookie when browser exits
+    else:
+        max_age_seconds = 365 * 24 * 60 * 60  # 1 year
+
+    resp.set_cookie(LABELER_ID_COOKIE_KEY, labeler_id, max_age=max_age_seconds, httponly=True, secure=not app.debug)
+
+
+def requires_admin(f):
+    """ HTTP basic auth using GROUPING_ADMIN_USERNAME / GROUPING_ADMIN_PASSWORD. Disabled if those are unset. """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        username = app.config['USERNAME']
+        password = app.config['PASSWORD']
+        if not username or not password:
+            return Response("Admin pages are disabled. Set GROUPING_ADMIN_USERNAME and GROUPING_ADMIN_PASSWORD.",
+                            status=403)
+        auth = request.authorization
+        if not auth or not (hmac.compare_digest(auth.username or '', username) and
+                            hmac.compare_digest(auth.password or '', password)):
+            return Response("Login required", status=401, headers={'WWW-Authenticate': 'Basic realm="manage"'})
+        return f(*args, **kwargs)
+    return decorated
 
 
 @app.cli.command('dump_samples')
@@ -58,7 +96,7 @@ def remove_command(experiment_id, database):
 @app.cli.command('remove_sample')
 @click.argument('sample_name')
 @click.option('--force/--no-force', help='force remove something even if it has responses', default=False)
-def remove_command(sample_name, force):
+def remove_sample_command(sample_name, force):
     remove_from_sample_db(sample_name, force)
 
 
@@ -67,7 +105,7 @@ def remove_command(sample_name, force):
 @click.option('--database', help='database file to use, a *.db file', default=None)
 def load_command(directory, database):
     """ insert ALL the files from the given folder """
-    success = load(directory)
+    success = load(directory, database)
 
     if success:
         dump_db(False, database, responses=False, samples=True)
@@ -130,8 +168,8 @@ def init_db(alternate_db_path, force):
     return True
 
 
-def load(directory):
-    db = get_db()
+def load(directory, database=None):
+    db = get_db(database)
 
     if not os.path.isdir(directory):
         print(Fore.RED, end='')
@@ -162,7 +200,7 @@ def load(directory):
         else:
             sample_url = os.path.join(SAMPLES_URL_PREFIX, subdir, sample_name)
             try:
-                db.execute('INSERT INTO samples (url, count) VALUES (?, 0)', [sample_url])
+                db.execute('INSERT INTO samples (url) VALUES (?)', [sample_url])
                 print(Fore.BLUE, end='')
                 print("Added", sample_url)
                 print(Fore.RESET, end='')
@@ -245,7 +283,8 @@ def dump_db(outfile_name, database, responses=True, samples=True):
                 'data': response,
             })
             cols = [str(col) for col in entry]
-            cols[1] = cols[1].strip(SAMPLES_URL_PREFIX)
+            if cols[1].startswith(SAMPLES_URL_PREFIX):
+                cols[1] = cols[1][len(SAMPLES_URL_PREFIX):]
             cols.pop(4)
             cols.pop(4)
             data = "["
@@ -255,7 +294,7 @@ def dump_db(outfile_name, database, responses=True, samples=True):
                     data += "..., "
                     break
                 data += s
-            if len(data) == 0:
+            if data == "[":
                 cols[4] = data + "]"
             else:
                 cols[4] = data[:-2] + "]"
@@ -271,6 +310,8 @@ def dump_db(outfile_name, database, responses=True, samples=True):
         print_samples_db()
     if responses:
         print_response_db()
+
+    outfile.close()
 
 
 def remove_experiment(experiment_id, database):
@@ -322,8 +363,8 @@ def remove_from_sample_db(sample, force=False):
     sample_url = SAMPLES_URL_PREFIX + sample
     try:
         if not force:
-            y = input("Are you sure you want to DELETE ALL DATA and re-initialize the database? [y/n]")
-            if y != 'y' and y != 'Y':
+            y = input("Are you sure you want to remove " + sample_url + " from the samples table? [y/n]")
+            if y == 'y' or y == 'Y':
                 remove_cur = db.execute('DELETE FROM samples WHERE url=?', [sample_url])
             else:
                 print("Aborting.")
@@ -347,20 +388,6 @@ def remove_from_sample_db(sample, force=False):
     db.commit()
 
 
-def sample_new_urls(entries, samples_per_participant):
-    """ samples from a*x^a-1 """
-    a = 10
-    sample_indeces = []
-    while True:
-        idx = int(np.random.power(a) * entries.shape[0])
-        if idx not in sample_indeces:
-            sample_indeces.append(idx)
-        if len(sample_indeces) == samples_per_participant:
-            break
-    sample_indeces = np.array(sample_indeces)
-    return entries[sample_indeces]
-
-
 @app.teardown_appcontext
 def close_db(error):
     """Closes the database again at the end of the request."""
@@ -371,23 +398,30 @@ def close_db(error):
 @app.route('/responses', methods=['POST'])
 def responses():
     db = get_db()
-    labeler_id = request.cookies.get(LABELER_ID_COOKIE_KEY, NO_LABELER_ID)
+    labeler_id = get_labeler_id_cookie()
 
-    if labeler_id == NO_LABELER_ID:
+    if labeler_id is None:
         return Response("No labeler id cookie", status=400, mimetype='application/json')
 
-    req_data = request.get_json()
-    sample = req_data['sample']
-    ip_addr = request.remote_addr
-    stamp = datetime.now()
-    metadata = req_data['metadata']
-    experiment_id = req_data['experiment_id']
+    try:
+        req_data = request.get_json()
+        sample = req_data['sample']
+        ip_addr = request.remote_addr
+        stamp = datetime.now()
+        metadata = req_data['metadata']
+        experiment_id = str(uuid.UUID(req_data['experiment_id']))
 
-    sample_response = req_data['response']
-    url = sample['url']
-    # sort the final response by timestamps for sanity
-    sorted_final_response = sorted(sample_response['final_response'], key=lambda d: d['timestamp'])
-    sample_response['final_response'] = sorted_final_response
+        sample_response = req_data['response']
+        url = str(sample['url'])
+        # sort the final response by timestamps for sanity
+        sorted_final_response = sorted(sample_response['final_response'], key=lambda d: float(d['timestamp']))
+        sample_response['final_response'] = sorted_final_response
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return Response("Malformed response", status=400, mimetype='application/json')
+
+    # only accept responses for samples that are currently part of the study
+    if db.execute('SELECT 1 FROM samples WHERE url=?', [url]).fetchone() is None:
+        return Response("Unknown sample", status=400, mimetype='application/json')
 
     # Insert the full response details
     db.execute(
@@ -417,20 +451,11 @@ def responses():
 @app.route('/id', methods=['GET'])
 def id():
     # unique ID for this labeler
-    if LABELER_ID_COOKIE_KEY in request.cookies:
-        labeler_id = request.cookies[LABELER_ID_COOKIE_KEY]
-    else:
-        labeler_id = str(uuid.uuid4())
+    labeler_id = get_labeler_id_cookie() or str(uuid.uuid4())
 
     template = render_template('id.html', labeler_id=labeler_id)
     resp = make_response(template)
-
-    if app.debug:
-        max_age_seconds = None  # when debugging, delete cookie when browser exits
-    else:
-        max_age_seconds = 365 * 24 * 60 * 60  # 1 year
-
-    resp.set_cookie(LABELER_ID_COOKIE_KEY, labeler_id, max_age=max_age_seconds)
+    set_labeler_id_cookie(resp, labeler_id)
     return resp
 
 
@@ -457,6 +482,7 @@ def thank_you():
 
 
 @app.route('/manage', methods=['POST'])
+@requires_admin
 def manage_post():
     req_data = request.get_json()
     selected_samples = req_data['selected_samples']
@@ -498,6 +524,7 @@ def manage_post():
 
 
 @app.route('/manage', methods=['GET'])
+@requires_admin
 def manage_get():
     # get list of possible samples
     try:
@@ -534,9 +561,9 @@ def manage_get():
                 'url': entry[0],
             })
 
-        return render_template('manage.html', samples=json.dumps(samples), db_samples=db_samples)
-    except requests.exceptions.ProxyError:
-        return render_template('error.html', reason="Failed to contact sever for list of samples.")
+        return render_template('manage.html', samples=samples, db_samples=db_samples)
+    except OSError:
+        return render_template('error.html', reason="Failed to read the list of samples from " + SAMPLES_ROOT)
 
 
 @app.route('/wpi_participant_pool', methods=['GET'])
@@ -546,16 +573,14 @@ def wpi_participant_pool():
 
 @app.route('/', methods=['GET'])
 def root():
-    return redirect(url_for('interface'))
+    # keep the query string so mturk's assignmentId survives the redirect
+    return redirect(url_for('interface', **request.args.to_dict()))
 
 
 @app.route('/interface', methods=['GET'])
 def interface():
     # unique ID for this labeler
-    if LABELER_ID_COOKIE_KEY in request.cookies:
-        labeler_id = request.cookies[LABELER_ID_COOKIE_KEY]
-    else:
-        labeler_id = str(uuid.uuid4())
+    labeler_id = get_labeler_id_cookie() or str(uuid.uuid4())
 
     db = get_db()
     # get the list of samples that this labeler has already labeled
@@ -573,7 +598,7 @@ def interface():
         return render_template('thankyou.html')
 
     # explicitly shuffle them
-    np.random.shuffle(unlabeled_sample_urls)
+    random.shuffle(unlabeled_sample_urls)
 
     # Generate new UUID for this experiment. An experiment is one session by one labeler done without refreshing.
     experiment_id = str(uuid.uuid4())
@@ -581,17 +606,12 @@ def interface():
     samples = [{'url': url} for url in unlabeled_sample_urls]
 
     href = "thankyou?"
-    template = render_template('interface.html', samples=json.dumps(samples), experiment_id=experiment_id,
-                               next_href=href, labeler_id=labeler_id)
+    assignment_id = request.args.get('assignmentId', '')
+    template = render_template('interface.html', samples=samples, experiment_id=experiment_id,
+                               assignment_id=assignment_id, next_href=href, labeler_id=labeler_id)
     resp = make_response(template)
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-
-    if app.debug:
-        max_age_seconds = None  # when debugging, delete cookie when browser exits
-    else:
-        max_age_seconds = 365 * 24 * 60 * 60  # 1 year
-
-    resp.set_cookie(LABELER_ID_COOKIE_KEY, labeler_id, max_age=max_age_seconds)
+    set_labeler_id_cookie(resp, labeler_id)
     return resp
 
 

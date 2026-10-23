@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="{{url_for('static', filename='common.css')}}"/>
   <title>Manage</title>
 </head>
@@ -37,7 +37,7 @@
 </body>
 <script src="{{url_for('static', filename='manage.js')}}"></script>
 <script>
-  samples = {{samples|safe}}
-  db_samples = {{db_samples|safe}}
+  samples = {{samples|tojson}};
+  db_samples = {{db_samples|tojson}};
 </script>
 </html>

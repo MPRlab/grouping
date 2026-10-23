@@ -27,7 +27,10 @@ function decode(strToDecode)
  * Returns the Mechanical Turk Site to post the HIT to (sandbox. prod)
  */
 function turkGetSubmitToHost() {
-  return decode(turkGetParam("turkSubmitTo", "https://www.mturk.com"));
+  // only allow posting to mturk itself, so a crafted link can't redirect the form elsewhere
+  var allowed = ["https://www.mturk.com", "https://workersandbox.mturk.com"];
+  var host = decode(turkGetParam("turkSubmitTo", "https://www.mturk.com"));
+  return allowed.indexOf(host) !== -1 ? host : "https://www.mturk.com";
 }
 
 
