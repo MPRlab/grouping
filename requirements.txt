@@ -17,7 +17,7 @@ grpcio==1.10.0
 html5lib==0.9999999
 jmespath==0.9.3
 kiwisolver==1.0.1
-Markdown==2.6.11
+Markdown==3.8.1
 matplotlib==2.2.2
 numpy==1.14.2
 pandas==0.22.0
