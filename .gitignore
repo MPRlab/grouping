@@ -8,3 +8,4 @@ venv
 madmom/log_data
 workspace.xml
 log_data
+.DS_Store

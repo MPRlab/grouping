@@ -1,42 +1,57 @@
 # Setup procedure
 
- - install python3.5 or 3.6
- - create a virtual environment
+The repo has two separate Python environments, because the training code is pinned to TensorFlow 1.10
+(Python 3.6) while the web app runs on current, patched versions of Flask:
 
-    cd /path/to/rhythmic_grouping
-    python -m venv venv
+| Environment | Used for | Python | Requirements |
+|---|---|---|---|
+| web app | the study interface in `interface/` | 3.10+ | `interface/requirements.txt` |
+| training | `madmom/`, `response_processing/`, `sample_generator/`, `mturk_scripts/` | 3.6 | `requirements.txt` |
+
+## Web app
+
+Create a virtual environment and install the dependencies:
+
+    cd /path/to/grouping
+    python3 -m venv interface/venv
     source interface/venv/bin/activate
+    pip install -r interface/requirements.txt
 
-Now you're in an isolated python environment. Now install the dependencies
+Secrets are read from environment variables (do not commit them):
 
-    sudo apt-get install python3 portaudio19-dev
-    pip install -r requirements.txt
+    export GROUPING_SECRET_KEY=<long random string>        # e.g. python -c "import secrets; print(secrets.token_hex(32))"
+    export GROUPING_ADMIN_USERNAME=<username for /manage>
+    export GROUPING_ADMIN_PASSWORD=<password for /manage>
 
-Before we run the webapp we need to list which samples we want in our database. Open the following file in a text editor:
+The `/manage` page (which can add/remove samples from the live study) requires HTTP basic auth with those
+credentials, and is disabled if they are not set. Only serve it over HTTPS.
 
-    interface/interface/static/samples/index.txt
+Create the database (this deletes any existing data, so read the warning before confirming):
 
-You can pick any file that's in the directory https://users.wpi.edu/~mprlab/grouping/data/samples
+    export FLASK_APP=/path/to/grouping/interface/interface/interface.py
+    mkdir -p interface/interface/db
+    flask initdb
 
-  export FLASK_APP=interface/interface.py
-  flask initdb
-
-Read the warning message, understand you want to proceed anyways, and do so.
+Then choose which samples are in the study, either on the `/manage` page or from the command line with
+`flask load <directory>` (the directory must be inside `/var/www/html/grouping`). Responses are only
+accepted for samples that are in the study.
 
 You can now run the webapp with
 
     flask run
 
+To avoid repeating the setup in every shell, you can add the `source .../activate` and `export FLASK_APP=...`
+lines above to the end of your `.bashrc`, using the path where you cloned the repo.
 
-### NOTE:
+## Training and analysis
 
-You shoud also consider adding these lines to the end of your `.bashrc`, and no don't change the username.
-
-    source /home/pdmitrano/Projects/grouping/venv/bin/activate
-    export FLASK_APP=/home/pdmitrano/Projects/grouping/interface/interface/interface.py
+    cd /path/to/grouping
+    python3.6 -m venv venv
+    source venv/bin/activate
+    sudo apt-get install portaudio19-dev
+    pip install -r requirements.txt
 
 # Dumping the database of responses
 
  - SSH onto the server
  - `flask dumpdb --outfile my_outfile.json`
-
