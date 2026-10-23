@@ -8,7 +8,7 @@ bleach==1.5.0
 boto3==1.6.22
 botocore==1.9.22
 bs4==0.0.1
-certifi==2025.4.26
+certifi==2026.10.19
 cycler==0.10.0
 Cython==0.28.1
 docutils==0.14
