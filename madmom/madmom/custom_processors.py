@@ -28,14 +28,16 @@ class LabelOutputProcessor(OutputProcessor):
         frame_sizes = kwargs.get('frame_sizes', [1024, 2048, 4096])
         max_frame_size = int((max(frame_sizes) * n_frames_in_window / 44100) * self.fps)
 
+        window = np.hanning(max_frame_size)
         for response in self.responses:
             for marker_time in response:
                 center_frame_idx = int(marker_time * self.fps)
-                window = np.hanning(max_frame_size)
-                start = max(center_frame_idx - max_frame_size//2, 0)
-                stop = min(center_frame_idx + max_frame_size//2, n_frames - 1)
+                # index of the window's first frame; may be negative or past the end, so clip but keep alignment
+                offset = center_frame_idx - max_frame_size // 2
+                start = max(offset, 0)
+                stop = min(offset + max_frame_size, n_frames)
                 for i in range(start, stop):
-                    labels[i] += window[i - start]
+                    labels[i] += window[i - offset]
 
         labels = labels / len(self.responses)
 

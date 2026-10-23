@@ -98,9 +98,9 @@ def train(args):
 
     sess, x, labels, sample_names = common(args)
 
-    summaries = tf.summary.merge_all()
-
     m = RNN()
+
+    summaries = tf.summary.merge_all()
 
     saver = tf.train.Saver()
     writer = None
@@ -148,8 +148,6 @@ def test(args):
 
     sess, x_test, labels_test, sample_names = common(args)
 
-    summaries = tf.summary.merge_all()
-
     m = RNN()
 
     saver = tf.train.Saver()
@@ -157,12 +155,12 @@ def test(args):
 
     fixed_length_x = x_test[:num_samples, 0:time_steps, :]
     fixed_length_labels = labels_test[:num_samples, 0:time_steps]
-    y_hat, loss_per_sample = sess.run([m.y_hat, m.loss], feed_dict={m.x: fixed_length_x, m.y: fixed_length_labels})
+    y_hat, loss = sess.run([m.y_hat, m.loss], feed_dict={m.x: fixed_length_x, m.y: fixed_length_labels})
+    print("Test Loss", loss)
 
     for test_idx in range(num_samples):
-        print("Test Loss", loss_per_sample[test_idx])
         plt.figure()
-        plt.plot(y_hat[test_idx, :, 0, 0], label="y_hat")
+        plt.plot(y_hat[test_idx], label="y_hat")
         plt.plot(fixed_length_labels[test_idx], label="labels")
         plt.ylabel("% likelihood of start of group")
         plt.xlabel("time")

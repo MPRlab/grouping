@@ -58,6 +58,9 @@ def main():
         print("[{:s}] is not a directory.".format(args.outdir))
         return
 
+    if args.seed is not None:
+        np.random.seed(args.seed)
+
     for f in args.infiles:
         generate_samples_for_file(f, args)
 

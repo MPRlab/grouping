@@ -21,10 +21,12 @@ def play(full_path):
     chunk = 1024
     data = wav_file.readframes(chunk)
     while len(data) > 0:
-        data = wav_file.readframes(chunk)
         stream.write(data)
+        data = wav_file.readframes(chunk)
 
     stream.close()
+    p.terminate()
+    wav_file.close()
 
 
 def main():
@@ -34,6 +36,7 @@ def main():
 
     if not os.path.exists(args.samples_dir):
         print("Samples directory does not exist: ", args.samples_dir)
+        return 1
 
     # create a list of pairs of samples
     files = os.listdir(args.samples_dir)

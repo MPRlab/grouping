@@ -4,14 +4,13 @@ import os
 import argparse
 import shutil
 from urllib.parse import urlparse
+import certifi
 import urllib3
 
 from response_processing import util
 
 
 def main():
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
     parser = argparse.ArgumentParser("download all samples references in dumpfile")
     parser.add_argument("dumpfile", help="The output of \"flask dumpdb --outfile=dump.json\"")
     parser.add_argument('outfolder', help='output folder to put samples in')
@@ -20,6 +19,9 @@ def main():
 
     responses_by_url = util.load_by_url(args.dumpfile)
     final_responses_by_url = util.get_final_responses(responses_by_url)
+
+    # verify TLS certificates (older urllib3 versions don't by default)
+    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
 
     for sample_url, final_responses in final_responses_by_url.items():
         o = urlparse(sample_url)
@@ -31,8 +33,6 @@ def main():
             continue
 
         print(sample_url, '->', outfile)
-
-        http = urllib3.PoolManager()
 
         with http.request('GET', sample_url, preload_content=False) as r, open(outfile, 'wb') as out_file:
             shutil.copyfileobj(r, out_file)

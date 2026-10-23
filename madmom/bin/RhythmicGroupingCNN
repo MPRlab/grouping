@@ -41,8 +41,7 @@ class CNN:
         self.dense2 = tf.layers.dense(self.dense1, units=256, activation=tf.nn.relu, name='dense2')
         self.dense3 = tf.layers.dense(self.dense2, units=1, activation=None, name='dense3')
 
-        self.y_hat = tf.squeeze(tf.nn.sigmoid(self.dense3, name='y_hat'), name='squeeze')
-        self.binary_y_hat = tf.argmax(self.y_hat, axis=1, name='binary_y_hat')
+        self.y_hat = tf.squeeze(tf.nn.sigmoid(self.dense3, name='y_hat'), axis=1, name='squeeze')
 
         self.loss = tf.losses.mean_squared_error(labels=self.y, predictions=self.y_hat)
 
@@ -141,15 +140,15 @@ def train(args):
     try:
         print("Training for {} epocs".format(args.epocs))
         inputs_per_sample = x.shape[1] - args.time_steps
-        fixed_length_x = np.ndarray((inputs_per_sample * x.shape[0], args.time_steps, x.shape[2], 1))
-        fixed_length_labels = np.ndarray((inputs_per_sample * x.shape[0]), dtype=np.int32)
+        fixed_length_x = np.ndarray((inputs_per_sample * x.shape[0], args.time_steps, x.shape[2], 1), dtype=np.float32)
+        fixed_length_labels = np.ndarray((inputs_per_sample * x.shape[0]), dtype=np.float32)
+        for i, t0 in enumerate(range(0, inputs_per_sample)):
+            s0 = i * x.shape[0]
+            s1 = s0 + x.shape[0]
+            t1 = t0 + args.time_steps
+            fixed_length_x[s0:s1] = x[:, t0:t1, :]
+            fixed_length_labels[s0:s1] = labels[:, t1]
         for j in range(args.epocs):
-            for i, t0 in enumerate(range(0, inputs_per_sample)):
-                s0 = i * x.shape[0]
-                s1 = s0 + x.shape[0]
-                t1 = t0 + args.time_steps
-                fixed_length_x[s0:s1] = x[:, t0:t1, :]
-                fixed_length_labels[s0:s1] = labels[:, t1]
             batch_0 = np.random.randint(0, fixed_length_x.shape[0] - batch_size)
             batch_x = fixed_length_x[batch_0:batch_0+batch_size]
             batch_y = fixed_length_labels[batch_0:batch_0+batch_size]
@@ -195,7 +194,7 @@ def test(args):
             t0 = t1 - args.time_steps
             sample_x[i] = x_test[sample_idx, t0:t1, :]
 
-        y_hat, loss = sess.run([m.y_hat, m.loss], feed_dict={m.x: sample_x, m.y: labels_test[sample_idx]})
+        y_hat, loss = sess.run([m.y_hat, m.loss], feed_dict={m.x: sample_x, m.y: labels_test[sample_idx, args.time_steps:]})
 
         print("Test Loss", loss)
         plt.figure()
