@@ -16,14 +16,19 @@ Please see the README for further details of this package.
 from __future__ import absolute_import, division, print_function
 
 import doctest
+from importlib.metadata import version, PackageNotFoundError
+
 import numpy as np
-import pkg_resources
 
 # import all packages
 from . import audio, evaluation, features, ml, processors, utils
 
 # define a version variable
-__version__ = pkg_resources.get_distribution("madmom").version
+# (importlib.metadata replaces pkg_resources, which setuptools is removing)
+try:
+    __version__ = version("madmom")
+except PackageNotFoundError:  # run from a source checkout
+    __version__ = "unknown"
 
 # set and restore numpy's print options for doctests
 _NP_PRINT_OPTIONS = np.get_printoptions()
@@ -98,11 +103,11 @@ class MadmomOutputChecker(_doctest_OutputChecker):
             got = re.sub("\\( ", '(', got)
             got = re.sub("\\[ ", '[', got)
             got = re.sub("0\\.0", '0.', got)
-            got = re.sub("\s*,", ',', got)
+            got = re.sub(r"\s*,", ',', got)
             want = re.sub("\\( ", '(', want)
             want = re.sub("\\[ ", '[', want)
             want = re.sub("0\\.0", '0.', want)
-            want = re.sub("\s*,", ',', want)
+            want = re.sub(r"\s*,", ',', want)
         super_check_output = _doctest_OutputChecker.check_output
         return super_check_output(self, want, got, optionflags)
 
@@ -110,4 +115,4 @@ class MadmomOutputChecker(_doctest_OutputChecker):
 doctest.OutputChecker = MadmomOutputChecker
 
 # keep namespace clean
-del pkg_resources, doctest
+del version, PackageNotFoundError, doctest

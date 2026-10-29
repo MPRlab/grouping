@@ -1,39 +1,18 @@
-# Training, dataset building, MTurk and analysis scripts. Requires Python 3.6 (TensorFlow 1.10).
+# Training, dataset building, MTurk and analysis scripts. Requires Python 3.12 or 3.13 (TensorFlow 2.21).
 # The web app has its own requirements in interface/requirements.txt
-# Werkzeug is only here because TensorBoard 1.10 needs it; it is not used to serve the study.
-absl-py==0.1.12
-astor==0.6.2
-beautifulsoup4==4.6.0
-bleach==1.5.0
-boto3==1.6.22
-botocore==1.9.22
-bs4==0.0.1
-certifi==2025.4.26
-cycler==0.10.0
-Cython==0.28.1
-docutils==0.14
-gast==0.2.0
-grpcio==1.10.0
-html5lib==0.9999999
-jmespath==0.9.3
-kiwisolver==1.0.1
-Markdown==2.6.11
-matplotlib==2.2.2
-numpy==1.14.2
-pandas==0.22.0
-protobuf==3.6.0
-PyAudio==0.2.11
-pydub==0.20.0
-pyparsing==2.2.0
-python-dateutil==2.6.1
-pytz==2018.3
-s3transfer==0.1.13
-scikit-learn==0.19.1
-scipy==1.1.0
-six==1.11.0
-sklearn==0.0
-tensorboard==1.10.0
-tensorflow==1.10.0
-termcolor==1.1.0
-urllib3==1.26.20
-Werkzeug==0.14.1
+# TensorFlow brings in its own TensorBoard, Keras and protobuf; only packages the code imports are listed here.
+boto3==1.43.121
+botocore==1.43.121
+certifi==2026.10.23
+matplotlib==3.11.2
+numpy==2.5.4
+PyAudio==0.2.14
+pydub==0.25.1
+# pydub imports audioop, which Python 3.13 removed
+audioop-lts==0.2.2; python_version >= "3.13"
+scikit-learn==1.9.1
+scipy==1.18.1
+tensorflow==2.21.0
+urllib3==2.8.0
+# the vendored madmom (compiles its Cython extensions on install)
+-e ./madmom

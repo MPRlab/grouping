@@ -61,17 +61,9 @@ try:
     # pylint: disable=wrong-import-order
     # pylint: disable=wrong-import-position
 
-    # try to use a faster sigmoid function
-    from distutils.version import LooseVersion
-    from scipy.version import version as scipy_version
-    # we need a recent version of scipy, older have a bug in expit
-    # https://github.com/scipy/scipy/issues/3385
-    if LooseVersion(scipy_version) < LooseVersion("0.14"):
-        # Note: Raising an AttributeError might not be the best idea ever
-        #       (i.e. ImportError would be more appropriate), but older
-        #       versions of scipy not having the expit function raise the same
-        #       error. In some cases this check fails, don't know why...
-        raise AttributeError
+    # try to use a faster sigmoid function (scipy >= 0.14, which the
+    # requirements guarantee; distutils' version check was removed with
+    # distutils in Python 3.12)
     from scipy.special import expit as _sigmoid
 except AttributeError:
     # define a fallback function

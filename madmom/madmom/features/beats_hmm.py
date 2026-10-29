@@ -298,15 +298,15 @@ class BeatTransitionModel(TransitionModel):
         states = np.arange(state_space.num_states, dtype=np.uint32)
         states = np.setdiff1d(states, state_space.first_states)
         prev_states = states - 1
-        probabilities = np.ones_like(states, dtype=np.float)
+        probabilities = np.ones_like(states, dtype=float)
         # tempo transitions occur at the boundary between beats
         # Note: connect the beat state space with itself, the transitions from
         #       the last states to the first states follow an exponential tempo
         #       transition (with the tempi given as intervals)
         to_states = state_space.first_states
         from_states = state_space.last_states
-        from_int = state_space.state_intervals[from_states].astype(np.float)
-        to_int = state_space.state_intervals[to_states].astype(np.float)
+        from_int = state_space.state_intervals[from_states].astype(float)
+        to_int = state_space.state_intervals[to_states].astype(float)
         prob = exponential_transition(from_int, to_int, self.transition_lambda)
         # use only the states with transitions to/from != 0
         from_prob, to_prob = np.nonzero(prob)
@@ -370,7 +370,7 @@ class BarTransitionModel(TransitionModel):
         states = np.arange(state_space.num_states, dtype=np.uint32)
         states = np.setdiff1d(states, state_space.first_states)
         prev_states = states - 1
-        probabilities = np.ones_like(states, dtype=np.float)
+        probabilities = np.ones_like(states, dtype=float)
         # tempo transitions occur at the boundary between beats (unless the
         # corresponding transition_lambda is set to None)
         for beat in range(state_space.num_beats):
@@ -381,8 +381,8 @@ class BarTransitionModel(TransitionModel):
             # transition follow an exponential tempo distribution
             from_int = state_space.state_intervals[from_states]
             to_int = state_space.state_intervals[to_states]
-            prob = exponential_transition(from_int.astype(np.float),
-                                          to_int.astype(np.float),
+            prob = exponential_transition(from_int.astype(float),
+                                          to_int.astype(float),
                                           transition_lambda[beat])
             # use only the states with transitions to/from != 0
             from_prob, to_prob = np.nonzero(prob)
@@ -500,7 +500,7 @@ class RNNBeatTrackingObservationModel(ObservationModel):
 
         """
         # init densities
-        log_densities = np.empty((len(observations), 2), dtype=np.float)
+        log_densities = np.empty((len(observations), 2), dtype=float)
         # Note: it's faster to call np.log 2 times instead of once on the
         #       whole 2d array
         log_densities[:, 0] = np.log((1. - observations) /
@@ -562,7 +562,7 @@ class RNNDownBeatTrackingObservationModel(ObservationModel):
 
         """
         # init densities
-        log_densities = np.empty((len(observations), 3), dtype=np.float)
+        log_densities = np.empty((len(observations), 3), dtype=float)
         # Note: it's faster to call np.log multiple times instead of once on
         #       the whole 2d array
         log_densities[:, 0] = np.log((1. - np.sum(observations, axis=1)) /
@@ -641,7 +641,7 @@ class GMMPatternTrackingObservationModel(ObservationModel):
         # number of GMMs of all patterns
         num_gmms = sum([len(pattern) for pattern in self.pattern_files])
         # init the densities
-        log_densities = np.empty((len(observations), num_gmms), dtype=np.float)
+        log_densities = np.empty((len(observations), num_gmms), dtype=float)
         # define the observation densities
         i = 0
         for pattern in self.pattern_files:

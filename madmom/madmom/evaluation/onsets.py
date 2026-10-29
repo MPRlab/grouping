@@ -51,7 +51,7 @@ def load_onsets(values):
     elif isinstance(values, (list, np.ndarray)):
         # convert to numpy array if possible
         # Note: use array instead of asarray because of ndmin
-        values = np.array(values, dtype=np.float, ndmin=1, copy=False)
+        values = np.array(values, dtype=float, ndmin=1, copy=None)
     else:
         # try to load the data from file
         values = np.loadtxt(values, ndmin=1)
@@ -100,8 +100,8 @@ def onset_evaluation(detections, annotations, window=WINDOW):
 
     """
     # make sure the arrays have the correct types and dimensions
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
     # TODO: right now, it only works with 1D arrays
     if detections.ndim > 1 or annotations.ndim > 1:
         raise NotImplementedError('please implement multi-dim support')

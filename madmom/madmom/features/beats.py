@@ -803,7 +803,7 @@ class CRFBeatDetectionProcessor(BeatTrackingProcessor):
         best_seq = results[normalized_seq_probabilities.argmax()][0]
 
         # convert the detected beat positions to seconds and return them
-        return best_seq.astype(np.float) / self.fps
+        return best_seq.astype(float) / self.fps
 
     @staticmethod
     def add_arguments(parser, interval_sigma=INTERVAL_SIGMA,
@@ -1040,7 +1040,7 @@ class DBNBeatTrackingProcessor(Processor):
 
         """
         # init the beats to return and the offset
-        beats = np.empty(0, dtype=np.int)
+        beats = np.empty(0, dtype=int)
         first = 0
         # use only the activations > threshold
         if self.threshold:
@@ -1433,12 +1433,12 @@ class DBNDownBeatTrackingProcessor(Processor):
         # corresponding beats (add 1 for natural counting)
         beat_numbers = positions.astype(int) + 1
         if self.correct:
-            beats = np.empty(0, dtype=np.int)
+            beats = np.empty(0, dtype=int)
             # for each detection determine the "beat range", i.e. states where
             # the pointers of the observation model are >= 1
             beat_range = om.pointers[path] >= 1
             # get all change points between True and False (cast to int before)
-            idx = np.nonzero(np.diff(beat_range.astype(np.int)))[0] + 1
+            idx = np.nonzero(np.diff(beat_range.astype(int)))[0] + 1
             # if the first frame is in the beat range, add a change at frame 0
             if beat_range[0]:
                 idx = np.r_[0, idx]

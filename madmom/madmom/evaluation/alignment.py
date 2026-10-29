@@ -19,7 +19,7 @@ _TIME = 0
 _SCORE_POS = 1
 
 # constants for missed events/notes
-_MISSED_NOTE_VAL = np.NaN
+_MISSED_NOTE_VAL = np.nan
 
 # default settings
 WINDOW = 0.25
@@ -224,7 +224,7 @@ def compute_metrics(event_alignment, ground_truth, window, err_hist_bins):
     # computing the mean or stddev of values that are all masked
     for k, v in results.items():
         if v is np.ma.masked_singleton:
-            results[k] = np.NaN
+            results[k] = np.nan
 
     # consider the case where EVERYTHING was missed or misaligned. the standard
     # computation fails then.

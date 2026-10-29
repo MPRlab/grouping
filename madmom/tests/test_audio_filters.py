@@ -83,15 +83,15 @@ class TestHz2MelFunction(unittest.TestCase):
         # array
         result = hz2mel(HZ)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         # list
         result = hz2mel([1, 2.])
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         # single value
         result = hz2mel(1.1)
         self.assertIsInstance(result, float)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_value(self):
         self.assertTrue(np.allclose(hz2mel(HZ), MEL))
@@ -103,15 +103,15 @@ class TestMel2HzFunction(unittest.TestCase):
         # array
         result = mel2hz(HZ)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         # list
         result = mel2hz([1, 2.])
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         # single value
         result = mel2hz(1.1)
         self.assertIsInstance(result, float)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_values(self):
         self.assertTrue(np.allclose(mel2hz(MEL), HZ))
@@ -122,7 +122,7 @@ class TestMelFrequenciesFunction(unittest.TestCase):
     def test_types(self):
         result = mel_frequencies(4, 20, 1000)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_values(self):
         # HZ is already mel-scaled, so use this for comparison
@@ -166,7 +166,7 @@ class TestBarkFrequenciesFunction(unittest.TestCase):
         # array
         result = bark_frequencies()
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.int)
+        self.assertEqual(result.dtype, int)
 
     def test_values(self):
         # all values
@@ -188,7 +188,7 @@ class TestBarkDoubleFrequenciesFunction(unittest.TestCase):
         # array
         result = bark_double_frequencies()
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.int)
+        self.assertEqual(result.dtype, int)
 
     def test_values(self):
         # all values
@@ -223,7 +223,7 @@ class TestLogFrequenciesFunction(unittest.TestCase):
         # return types
         result = log_frequencies(12, 20, 20000)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_values(self):
         # all values
@@ -252,7 +252,7 @@ class TestSemitoneFrequenciesFunction(unittest.TestCase):
         # return types
         result = semitone_frequencies(20, 20000)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_values(self):
         # all values
@@ -286,10 +286,10 @@ class TestHz2MidiFunction(unittest.TestCase):
         self.assertIsInstance(result, float)
         result = hz2midi([20, 40], 440)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         result = hz2midi(np.arange(10, 20), 440)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_values(self):
         # single value
@@ -316,10 +316,10 @@ class TestMidi2HzFunction(unittest.TestCase):
         self.assertIsInstance(result, float)
         result = midi2hz([20, 40], 440)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         result = midi2hz(np.arange(10, 20), 440)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_values(self):
         # single value
@@ -341,15 +341,15 @@ class TestHz2ErbFunction(unittest.TestCase):
         # array
         result = hz2erb(HZ)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         # list
         result = hz2erb([1, 2.])
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         # single value
         result = hz2erb(1.1)
         self.assertIsInstance(result, float)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_value(self):
         self.assertTrue(np.allclose(hz2erb(HZ), ERB))
@@ -361,15 +361,15 @@ class TestErb2HzFunction(unittest.TestCase):
         # array
         result = erb2hz(ERB)
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         # list
         result = erb2hz([1, 2.])
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
         # single value
         result = erb2hz(1.1)
         self.assertIsInstance(result, float)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_value(self):
         self.assertTrue(np.allclose(erb2hz(ERB), HZ))
@@ -437,7 +437,7 @@ class TestBins2FrequenciesFunction(unittest.TestCase):
     def test_types(self):
         result = bins2frequencies([0, 1, 2, 3, 4], [0, 1, 2, 3, 4])
         self.assertIsInstance(result, np.ndarray)
-        self.assertEqual(result.dtype, np.float)
+        self.assertEqual(result.dtype, float)
 
     def test_value(self):
         result = bins2frequencies([0, 1, 2, 3, 4], [0, 1, 2, 3, 4])
@@ -726,7 +726,7 @@ class TestFilterbankClass(unittest.TestCase):
         filt = Filterbank(np.zeros((100, 10)), np.arange(100))
         self.assertIsInstance(filt, Filterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
 
     def test_errors(self):
         with self.assertRaises(TypeError):
@@ -763,13 +763,13 @@ class TestFilterbankClass(unittest.TestCase):
         filt = Filterbank.from_filters(self.rect_filters, np.arange(100))
         self.assertIsInstance(filt, Filterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
         # a list of list of filters
         filt = Filterbank.from_filters([self.rect_filters,
                                         self.triang_filters], np.arange(100))
         self.assertIsInstance(filt, Filterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
 
     def test_values_rectangular(self):
         filt = Filterbank.from_filters(self.rect_filters, np.arange(100))
@@ -852,7 +852,7 @@ class TestMelFilterbankClass(unittest.TestCase):
         filt = MelFilterbank(np.arange(20000))
         self.assertIsInstance(filt, MelFilterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
 
     def test_constant_types(self):
         self.assertIsInstance(MelFilterbank.FMIN, float)
@@ -929,7 +929,7 @@ class TestBarkFilterbankClass(unittest.TestCase):
         filt = BarkFilterbank(np.arange(20000))
         self.assertIsInstance(filt, BarkFilterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
 
     def test_errors(self):
         with self.assertRaises(ValueError):
@@ -1030,7 +1030,7 @@ class TestLogarithmicFilterbankClass(unittest.TestCase):
         filt = LogarithmicFilterbank(np.arange(20000))
         self.assertIsInstance(filt, LogarithmicFilterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
 
     def test_errors(self):
         with self.assertRaises(NotImplementedError):
@@ -1084,8 +1084,8 @@ class TestRectangularFilterbankClass(unittest.TestCase):
         filt = RectangularFilterbank(np.arange(20000), [100, 1000])
         self.assertIsInstance(filt, RectangularFilterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
-        self.assertTrue(filt.crossover_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
+        self.assertTrue(filt.crossover_frequencies.dtype == float)
 
     def test_values(self):
         filt = RectangularFilterbank(np.arange(0, 2000, 20), [100, 1000],
@@ -1129,7 +1129,7 @@ class TestPitchClassProfileFilterbankClass(unittest.TestCase):
         filt = PitchClassProfileFilterbank(FFT_FREQS_1024)
         self.assertIsInstance(filt, PitchClassProfileFilterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
 
     def test_constant_types(self):
         self.assertIsInstance(PitchClassProfileFilterbank.CLASSES, int)
@@ -1160,7 +1160,7 @@ class TestHarmonicPitchClassProfileFilterbankClass(unittest.TestCase):
         filt = HarmonicPitchClassProfileFilterbank(FFT_FREQS_1024)
         self.assertIsInstance(filt, HarmonicPitchClassProfileFilterbank)
         self.assertTrue(filt.dtype == FILTER_DTYPE)
-        self.assertTrue(filt.bin_frequencies.dtype == np.float)
+        self.assertTrue(filt.bin_frequencies.dtype == float)
 
     def test_constant_types(self):
         self.assertIsInstance(HarmonicPitchClassProfileFilterbank.CLASSES, int)

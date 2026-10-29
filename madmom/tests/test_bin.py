@@ -9,7 +9,8 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import os
-import imp
+import importlib.machinery
+import importlib.util
 import sys
 import tempfile
 from os.path import join as pj
@@ -38,9 +39,17 @@ program_path = os.path.dirname(os.path.realpath(__file__)) + '/../bin/'
 sys.dont_write_bytecode = True
 
 
+def load_source(name, path):
+    # replacement for imp.load_source (imp was removed in Python 3.12); the programs have no .py extension
+    loader = importlib.machinery.SourceFileLoader(name, path)
+    module = importlib.util.module_from_spec(importlib.util.spec_from_loader(name, loader))
+    loader.exec_module(module)
+    return module
+
+
 def run_program(program):
     # import module, capture stdout
-    test = imp.load_source('test', program[0])
+    test = load_source('test', program[0])
     sys.argv = program
     backup = sys.stdout
     sys.stdout = StringIO()
@@ -54,7 +63,7 @@ def run_program(program):
 
 
 def run_help(program):
-    test = imp.load_source('test', program)
+    test = load_source('test', program)
     sys.argv = [program, '-h']
     try:
         test.main()

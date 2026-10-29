@@ -368,7 +368,7 @@ class NotePeakPickingProcessor(OnsetPeakPickingProcessor):
         # detect the peaks (function returns int indices)
         notes = peak_picking(activations, self.threshold, *timings)
         # split onsets and pitches
-        onsets = notes[0].astype(np.float) / self.fps
+        onsets = notes[0].astype(float) / self.fps
         pitches = notes[1] + 21
         # shift if necessary
         if self.delay:

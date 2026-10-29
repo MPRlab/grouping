@@ -1173,7 +1173,7 @@ class OnsetPeakPickingProcessor(Processor):
         # detect the peaks (function returns int indices)
         onsets = peak_picking(activations, self.threshold, *timings)
         # convert to timestamps
-        onsets = onsets.astype(np.float) / self.fps
+        onsets = onsets.astype(float) / self.fps
         # shift if necessary
         if self.delay:
             onsets += self.delay

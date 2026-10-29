@@ -59,7 +59,7 @@ def load_tempo(values, split_value=1., sort=False, norm_strengths=False,
     if isinstance(values, (list, np.ndarray)):
         # convert to numpy array if possible
         # Note: use array instead of asarray because of ndmin
-        values = np.array(values, dtype=np.float, ndmin=1, copy=False)
+        values = np.array(values, dtype=float, ndmin=1, copy=None)
     else:
         # try to load the data from file
         values = np.loadtxt(values, ndmin=1)
@@ -154,8 +154,8 @@ def tempo_evaluation(detections, annotations, tolerance=TOLERANCE):
     if float(tolerance) <= 0:
         raise ValueError('tolerance must be greater than 0')
     # make sure the annotations and detections have a float dtype
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
     # extract the detected tempi, ignore the strengths
     if detections.ndim == 2:
         detections = detections[:, 0]
@@ -178,7 +178,7 @@ def tempo_evaluation(detections, annotations, tolerance=TOLERANCE):
     # test all detected tempi against all annotated tempi
     errors = np.abs(1 - (detections[:, np.newaxis] / annotations))
     # correctly identified annotation tempi
-    correct = np.asarray(np.sum(errors <= tolerance, axis=0), np.bool)
+    correct = np.asarray(np.sum(errors <= tolerance, axis=0), bool)
     # the P-Score is the sum of the strengths of the correctly identified tempi
     pscore = np.sum(strengths[correct])
     # return the scores

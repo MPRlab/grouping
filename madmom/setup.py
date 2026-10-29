@@ -6,8 +6,7 @@ This file contains the setup for setuptools to distribute everything as a
 
 """
 
-from setuptools import setup, find_packages
-from distutils.extension import Extension
+from setuptools import Extension, setup, find_packages
 
 from Cython.Build import cythonize, build_ext
 

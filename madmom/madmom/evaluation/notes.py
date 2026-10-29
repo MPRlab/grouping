@@ -44,7 +44,7 @@ def load_notes(values):
     if isinstance(values, (list, np.ndarray)):
         # convert to numpy array if possible
         # Note: use array instead of asarray because of ndmin
-        return np.array(values, dtype=np.float, ndmin=2, copy=False)
+        return np.array(values, dtype=float, ndmin=2, copy=None)
     else:
         # try to load the data from file
         return np.loadtxt(values, ndmin=2)
@@ -123,8 +123,8 @@ def note_onset_evaluation(detections, annotations, window=WINDOW):
 
     """
     # make sure the arrays have the correct types and dimensions
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
     # check dimensions
     if detections.ndim != 2 or annotations.ndim != 2:
         raise ValueError('detections and annotations must be 2D arrays')
@@ -164,9 +164,9 @@ def note_onset_evaluation(detections, annotations, window=WINDOW):
         tp_, fp_, _, fn_, err_ = onset_evaluation(det[:, 0], ann[:, 0], window)
         # convert returned arrays to lists and append the detections and
         # annotations to the correct lists
-        tp = np.vstack((tp, det[np.in1d(det[:, 0], tp_)]))
-        fp = np.vstack((fp, det[np.in1d(det[:, 0], fp_)]))
-        fn = np.vstack((fn, ann[np.in1d(ann[:, 0], fn_)]))
+        tp = np.vstack((tp, det[np.isin(det[:, 0], tp_)]))
+        fp = np.vstack((fp, det[np.isin(det[:, 0], fp_)]))
+        fn = np.vstack((fn, ann[np.isin(ann[:, 0], fn_)]))
         # append the note number to the errors
         err_ = np.vstack((np.array(err_),
                           np.repeat(np.asarray([note]), len(err_)))).T

@@ -12,7 +12,7 @@ from madmom.processors import SequentialProcessor
 
 
 # dtype for numpy structured arrays that contain chord segments
-CHORD_DTYPE = [('start', np.float), ('end', np.float), ('label', 'U32')]
+CHORD_DTYPE = [('start', float), ('end', float), ('label', 'U32')]
 
 
 def load_chords(filename):

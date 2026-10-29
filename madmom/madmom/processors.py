@@ -23,7 +23,7 @@ import multiprocessing as mp
 
 import numpy as np
 
-from collections import MutableSequence
+from collections.abc import MutableSequence
 
 
 class Processor(object):
@@ -685,7 +685,7 @@ class BufferProcessor(Processor):
         ndmin = len(self.buffer_size)
         # cast the data to have that many dimensions
         if data.ndim < ndmin:
-            data = np.array(data, copy=False, subok=True, ndmin=ndmin)
+            data = np.array(data, copy=None, subok=True, ndmin=ndmin)
         # length of the data
         data_length = len(data)
         # remove `data_length` from buffer at the beginning and append new data

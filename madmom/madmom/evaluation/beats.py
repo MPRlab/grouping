@@ -87,7 +87,7 @@ def load_beats(values, downbeats=False):
     elif isinstance(values, (list, np.ndarray)):
         # convert to numpy array if possible
         # Note: use array instead of asarray because of ndmin
-        values = np.array(values, dtype=np.float, ndmin=1, copy=False)
+        values = np.array(values, dtype=float, ndmin=1, copy=None)
     else:
         # try to load the data from file
         values = np.loadtxt(values, ndmin=1)
@@ -246,13 +246,13 @@ def find_closest_intervals(detections, annotations, matches=None):
     """
     # if no detection are given, return an empty interval array
     if len(detections) == 0:
-        return np.zeros(0, dtype=np.float)
+        return np.zeros(0, dtype=float)
     # at least annotations must be given
     if len(annotations) < 2:
         raise BeatIntervalError
     # make sure the annotations and detections have a float dtype
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
     # init array
     closest_interval = np.ones_like(detections)
     # intervals
@@ -338,13 +338,13 @@ def calc_relative_errors(detections, annotations, matches=None):
     """
     # if no detection are given, return an empty interval array
     if len(detections) == 0:
-        return np.zeros(0, dtype=np.float)
+        return np.zeros(0, dtype=float)
     # at least annotations must be given
     if len(annotations) < 2:
         raise BeatIntervalError
     # make sure the annotations and detections have a float dtype
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
     # determine the closest annotations
     if matches is None:
         matches = find_closest_matches(detections, annotations)
@@ -421,8 +421,8 @@ def pscore(detections, annotations, tolerance=PSCORE_TOLERANCE):
         raise ValueError("`tolerance` must be greater than 0.")
 
     # make sure the annotations and detections have a float dtype
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
 
     # the error window is the given fraction of the median beat interval
     window = tolerance * np.median(np.diff(annotations))
@@ -473,8 +473,8 @@ def cemgil(detections, annotations, sigma=CEMGIL_SIGMA):
         raise ValueError("`sigma` must be greater than 0.")
 
     # make sure the annotations and detections have a float dtype
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
 
     # determine the abs. errors of the detections to the closest annotations
     # Note: the original implementation searches for the closest matches of
@@ -551,8 +551,8 @@ def goto(detections, annotations, threshold=GOTO_THRESHOLD, sigma=GOTO_SIGMA,
         raise ValueError("Threshold, sigma and mu must be positive.")
 
     # make sure the annotations and detections have a float dtype
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
 
     # get the indices of the closest detections to the annotations to determine
     # the longest continuous segment
@@ -647,8 +647,8 @@ def cml(detections, annotations, phase_tolerance=CONTINUITY_PHASE_TOLERANCE,
         raise ValueError("Tempo and phase tolerances must be greater than 0")
 
     # make sure the annotations and detections have a float dtype
-    detections = np.asarray(detections, dtype=np.float)
-    annotations = np.asarray(annotations, dtype=np.float)
+    detections = np.asarray(detections, dtype=float)
+    annotations = np.asarray(annotations, dtype=float)
 
     # determine closest annotations to detections
     closest = find_closest_matches(detections, annotations)
@@ -835,7 +835,7 @@ def _error_histogram(detections, annotations, histogram_bins):
     # map the relative beat errors to the range of -0.5..0.5
     errors = np.mod(errors + 0.5, -1) + 0.5
     # get bin counts for the given errors over the distribution
-    histogram = np.histogram(errors, histogram_bins)[0].astype(np.float)
+    histogram = np.histogram(errors, histogram_bins)[0].astype(float)
     # make the histogram circular by adding the last bin to the first one
     histogram[0] += histogram[-1]
     # return the histogram without the last bin
@@ -858,7 +858,7 @@ def _entropy(error_histogram):
 
     """
     # copy the error_histogram, because it must not be altered
-    histogram = np.copy(error_histogram).astype(np.float)
+    histogram = np.copy(error_histogram).astype(float)
     # normalize the histogram
     histogram /= np.sum(histogram)
     # set all 0 values to 1 to make entropy calculation well-behaved

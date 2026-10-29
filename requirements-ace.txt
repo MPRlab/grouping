@@ -1,7 +1,7 @@
-protobuf==3.6.0
-six==1.11.0
-tensorboard==1.10.0
-tensorflow-gpu==1.10.0
-termcolor==1.1.0
-sklearn==0.0
-scipy==1.1.0
+# Training on the ACE GPU cluster (Linux). Requires Python 3.12 or 3.13 (TensorFlow 2.21).
+# tensorflow-gpu is discontinued; the and-cuda extra installs the CUDA libraries TensorFlow needs.
+matplotlib==3.11.2
+numpy==2.5.4
+scikit-learn==1.9.1
+scipy==1.18.1
+tensorflow[and-cuda]==2.21.0

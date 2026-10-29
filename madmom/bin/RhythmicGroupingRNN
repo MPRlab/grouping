@@ -10,64 +10,75 @@ import tensorflow as tf
 
 
 class BiDirectionalRNN:
-    def __init__(self, time_steps, num_samples):
+    def __init__(self):
         num_features = 314
-        self.forwards_x = tf.placeholder(tf.float32, shape=(num_samples, time_steps, num_features), name="forwards_x")
-        self.labels_single = tf.placeholder(tf.float32, shape=(num_samples, time_steps), name="labels")
-        self.labels_compliment = 1 - self.labels_single
-        self.labels = tf.stack((self.labels_single, self.labels_compliment), 2, name="stack")
+        self.num_hidden_1 = 25
 
-        self.backwards_x = tf.reverse(self.forwards_x, axis=[1], name="backwards_x")
+        # time steps are left open, so one model handles any clip length
+        forwards_x = tf.keras.Input(shape=(None, num_features), name="forwards_x")
+        backwards_x = tf.keras.layers.Lambda(lambda t: tf.reverse(t, axis=[1]), name="backwards_x")(forwards_x)
+        x = tf.keras.layers.Concatenate(axis=2, name="concat")([forwards_x, backwards_x])
 
-        self.fwd_imgs = tf.transpose(tf.expand_dims(self.forwards_x, axis=3), perm=[0, 2, 1, 3])
-        tf.summary.image("forwards input", self.fwd_imgs, max_outputs=2)
-        self.bwd_imgs = tf.transpose(tf.expand_dims(self.backwards_x, axis=3), perm=[0, 2, 1, 3])
-        tf.summary.image("backwards input", self.bwd_imgs, max_outputs=2)
+        lstm1 = tf.keras.layers.Bidirectional(
+            tf.keras.layers.LSTM(self.num_hidden_1, activation="tanh", return_sequences=True), merge_mode="concat",
+            name="lstm1")(x)
 
-        self.x = tf.concat((self.forwards_x, self.backwards_x), axis=2, name="concat")
+        # one weight matrix shared by every time step
+        init = tf.keras.initializers.TruncatedNormal(stddev=1.0)
+        self.fc = tf.keras.layers.Dense(2, kernel_initializer=init, bias_initializer=init, name="fc")
+        z1 = self.fc(lstm1)
 
-        self.imgs = tf.transpose(tf.expand_dims(self.x, axis=3), perm=[0, 2, 1, 3])
-        tf.summary.image("concatenated input", self.imgs, max_outputs=2)
-        self.labels_img = tf.expand_dims(tf.expand_dims(self.labels_single, axis=0), axis=3, name='labels_img')
-        tf.summary.image("labels", self.labels_img, max_outputs=10)
+        self.model = tf.keras.Model(forwards_x, z1, name="rhythmic_grouping_rnn")
+        self.optimizer = tf.keras.optimizers.Adam(0.001, epsilon=1e-8)
 
-        with tf.name_scope("lstm1"):
-            self.num_hidden_1 = 25
-            self.w1 = tf.Variable(tf.truncated_normal([self.num_hidden_1 * 2, 2]), dtype=tf.float32, name="w1")
-            self.w1_steps = tf.reshape(tf.tile(self.w1, [time_steps, 1]), [time_steps, self.num_hidden_1 * 2, 2])
-            self.b1 = tf.Variable(tf.truncated_normal([2]), dtype=tf.float32, name="b1")
-            self.fw_lstm1 = tf.nn.rnn_cell.BasicLSTMCell(self.num_hidden_1, activation=tf.tanh)
-            self.bw_lstm1 = tf.nn.rnn_cell.BasicLSTMCell(self.num_hidden_1, activation=tf.tanh)
-            self.lstm_outputs, self.lstm1_states = tf.nn.bidirectional_dynamic_rnn(self.fw_lstm1, self.bw_lstm1, self.x,
-                                                                                   dtype=tf.float32)
-            self.lstm1 = tf.concat(self.lstm_outputs, 2)
-            self.lstm1_4d = tf.expand_dims(self.lstm1, 2, name="lstm1_4d")
+    @staticmethod
+    def stack_labels(labels_single):
+        # (start of group, not start of group) for each time step
+        return tf.stack((labels_single, 1 - labels_single), 2, name="stack")
 
-        with tf.name_scope("fc"):
-            self.w1_batch = tf.reshape(tf.tile(self.w1_steps, [num_samples, 1, 1]),
-                                       [num_samples, time_steps, self.num_hidden_1 * 2, 2])
-            self.z1 = tf.matmul(self.lstm1_4d, self.w1_batch, name="matmul1") + self.b1
+    def forward(self, forwards_x, labels_single, training=False):
+        z1 = self.model(forwards_x, training=training)
+        y_hat = tf.nn.softmax(z1, name="y_hat")
+        loss_raw = tf.nn.softmax_cross_entropy_with_logits(labels=self.stack_labels(labels_single), logits=z1)
+        loss_per_sample = tf.reduce_sum(loss_raw, axis=1, name="loss_per_sample")
+        loss = tf.reduce_mean(loss_per_sample, name="loss")
+        return y_hat, loss_per_sample, loss
 
-            tf.summary.histogram(self.w1.name, self.w1)
+    @tf.function
+    def train_step(self, forwards_x, labels_single):
+        with tf.GradientTape() as tape:
+            y_hat, _, loss = self.forward(forwards_x, labels_single, training=True)
+        grads = tape.gradient(loss, self.model.trainable_variables)
+        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+        return y_hat, loss, grads
 
-        with tf.name_scope("softmax"):
-            self.y_hat = tf.nn.softmax(self.z1, name="y_hat")
+    def checkpoint(self):
+        return tf.train.Checkpoint(model=self.model, optimizer=self.optimizer)
 
-        self.global_step = tf.Variable(0, trainable=False, name="global_step")
+    def write_summaries(self, forwards_x, labels_single, loss, grads, step):
+        backwards_x = forwards_x[:, ::-1, :]
+        image_summary("forwards input", np.transpose(forwards_x[..., None], (0, 2, 1, 3)), step, max_outputs=2)
+        image_summary("backwards input", np.transpose(backwards_x[..., None], (0, 2, 1, 3)), step, max_outputs=2)
+        image_summary("concatenated input",
+                      np.transpose(np.concatenate((forwards_x, backwards_x), axis=2)[..., None], (0, 2, 1, 3)),
+                      step, max_outputs=2)
+        image_summary("labels", labels_single[None, :, :, None], step, max_outputs=10)
+        tf.summary.histogram("fc/w1", self.fc.kernel, step=step)
+        for grad, var in zip(grads, self.model.trainable_variables):
+            tf.summary.histogram(variable_name(var) + "/gradient", grad, step=step)
+        tf.summary.scalar("loss", loss, step=step)
 
-        with tf.name_scope("cross_entropy"):
-            self.loss_raw = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.labels, logits=self.z1,
-                                                                    name="loss_raw")
-            self.loss_per_sample = tf.reduce_sum(self.loss_raw, name="loss_per_sample", axis=1)
-            self.loss = tf.reduce_mean(self.loss_per_sample, name="loss")
-            tf.summary.scalar("loss", self.loss)
 
-        with tf.name_scope("train"):
-            self.train_step = tf.train.AdamOptimizer(0.001).minimize(self.loss, global_step=self.global_step)
-            trainable_vars = tf.trainable_variables()
-            grads = list(zip(tf.gradients(self.loss, trainable_vars), trainable_vars))
-            for grad, var in grads:
-                tf.summary.histogram(var.name + "/gradient", grad)
+def image_summary(name, images, step, max_outputs):
+    # TF1 rescaled float images to the full range; tf.summary.image in TF2 clips to [0, 1] instead
+    images = np.asarray(images, dtype=np.float32)
+    lo = images.min(axis=(1, 2, 3), keepdims=True)
+    hi = images.max(axis=(1, 2, 3), keepdims=True)
+    tf.summary.image(name, (images - lo) / np.maximum(hi - lo, 1e-12), step=step, max_outputs=max_outputs)
+
+
+def variable_name(var):
+    return getattr(var, "path", var.name)
 
 
 def main():
@@ -105,82 +116,82 @@ def common(args):
     labels = dataset["labels"]
     sample_names = dataset["sample_names"]
 
-    summaries = tf.summary.merge_all()
-    sess = tf.Session()
+    # make_dataset_v2 stores x as (clips, frames, features, 1); the LSTM wants (clips, frames, features)
+    if x.ndim == 4:
+        x = x[..., 0]
 
-    return sess, x, labels, sample_names, summaries
+    return x.astype(np.float32), labels.astype(np.float32), sample_names
 
 
 def model_only(args):
-    time_steps = 802
-    num_samples = 82
-    m = BiDirectionalRNN(time_steps, num_samples)
-    print(m.labels_single.get_shape())
+    time_steps = args.time_steps or 800
+    num_samples = args.num_samples or 82
+    m = BiDirectionalRNN()
+    m.model.summary()
+    print(m.model.compute_output_shape((num_samples, time_steps, 314)))
 
 
 def train(args):
     summary_frequency = 25
-    time_steps = 802
     num_samples = 82
 
-    m = BiDirectionalRNN(time_steps, num_samples)
+    x, labels, sample_names = common(args)
+    time_steps = x.shape[1]
 
-    sess, x, labels, sample_names, summaries = common(args)
+    m = BiDirectionalRNN()
+    ckpt = m.checkpoint()
 
-    saver = tf.train.Saver()
+    writer = None
+    log_dir = None
     if args.log:
-        stamp = "{:%B_%d_%H:%M:%S}".format(datetime.now())
+        stamp = "{:%B_%d_%H-%M-%S}".format(datetime.now())
         log_dir = os.path.join("log_data", stamp)
-        writer = tf.summary.FileWriter(log_dir)
-        writer.add_graph(sess.graph)
+        writer = tf.summary.create_file_writer(log_dir)
 
-    # train
-    init_op = tf.global_variables_initializer()
-    sess.run(init_op)
+    fixed_length_x = x[:num_samples, 0:time_steps, :]
+    fixed_length_labels = labels[:num_samples, 0:time_steps]
+    y_hat = None
 
     try:
         for j in range(args.epocs):
-            fixed_length_x = x[:num_samples, 0:time_steps, :]
-            fixed_length_labels = labels[:num_samples, 0:time_steps]
-            feed_dict = {m.forwards_x: fixed_length_x, m.labels_single: fixed_length_labels}
-            ops = [m.global_step, summaries, m.loss, m.y_hat, m.train_step]
-            step, s, loss, y_hat, _ = sess.run(ops, feed_dict=feed_dict)
+            y_hat, loss, grads = m.train_step(fixed_length_x, fixed_length_labels)
+            step = int(m.optimizer.iterations.numpy())
             if j % summary_frequency == 0:
                 if args.log:
-                    writer.add_summary(s, step)
+                    with writer.as_default():
+                        m.write_summaries(fixed_length_x, fixed_length_labels, loss, grads, step)
 
-                print(j, loss)
+                print(j, float(loss))
 
     except KeyboardInterrupt:
         pass
 
-    plot(y_hat, fixed_length_labels, sample_names[0], sample_idx=0)
+    if y_hat is not None:
+        plot(y_hat.numpy(), fixed_length_labels, sample_names[0], sample_idx=0)
 
     if args.log:
-        os.environ['TF_LOG_DIR'] = log_dir
-        saver.save(sess, os.path.join(log_dir, "rhythmic_grouping_rnn.ckpt"))
+        ckpt.write(os.path.join(log_dir, "rhythmic_grouping_rnn.ckpt"))
+        writer.flush()
 
 
 def test(args):
     num_samples = 15
 
-    sess, x_test, labels_test, sample_names, summaries = common(args)
+    x_test, labels_test, sample_names = common(args)
     time_steps = x_test.shape[1]
 
-    m = BiDirectionalRNN(time_steps, num_samples)
-
-    saver = tf.train.Saver()
-    saver.restore(sess, args.checkpoint)
+    m = BiDirectionalRNN()
+    m.checkpoint().read(args.checkpoint).expect_partial()
 
     fixed_length_x = x_test[:num_samples, 0:time_steps, :]
     fixed_length_labels = labels_test[:num_samples, 0:time_steps]
-    y_hat, loss_per_sample = sess.run([m.y_hat, m.loss_per_sample],
-                           feed_dict={m.forwards_x: fixed_length_x, m.labels_single: fixed_length_labels})
+    y_hat, loss_per_sample, _ = m.forward(fixed_length_x, fixed_length_labels)
+    y_hat, loss_per_sample = y_hat.numpy(), loss_per_sample.numpy()
 
-    for test_idx in range(num_samples):
+    for test_idx in range(len(fixed_length_x)):
         print("Test Loss", loss_per_sample[test_idx])
         plt.figure()
-        plt.plot(y_hat[test_idx, :, 0, 0], label="y_hat")
+        plt.plot(y_hat[test_idx, :, 0], label="y_hat")
         plt.plot(fixed_length_labels[test_idx], label="labels")
         plt.ylabel("% likelihood of start of group")
         plt.xlabel("time")
@@ -190,7 +201,7 @@ def test(args):
 
 
 def plot(y_hat, fixed_length_labels, sample_name, sample_idx):
-    plt.plot(y_hat[sample_idx, :, 0, 0], label="y_hat")
+    plt.plot(y_hat[sample_idx, :, 0], label="y_hat")
     plt.plot(fixed_length_labels[sample_idx], label="labels")
     plt.ylabel("% likelihood of start of group")
     plt.xlabel("time")

@@ -329,7 +329,7 @@ class TempoEstimationProcessor(Processor):
         act_smooth = int(round(self.fps * self.act_smooth))
         activations = smooth_signal(activations, act_smooth)
         # generate a histogram of beat intervals
-        histogram = self.interval_histogram(activations.astype(np.float))
+        histogram = self.interval_histogram(activations.astype(float))
         # smooth the histogram
         histogram = smooth_histogram(histogram, self.hist_smooth)
         # detect the tempi and return them

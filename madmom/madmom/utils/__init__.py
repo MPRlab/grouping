@@ -396,7 +396,7 @@ def quantize_events(events, fps, length=None, shift=None):
 
     """
     # convert to numpy array if needed
-    events = np.asarray(events, dtype=np.float)
+    events = np.asarray(events, dtype=float)
     # shift all events if needed
     if shift:
         events += shift
@@ -413,7 +413,7 @@ def quantize_events(events, fps, length=None, shift=None):
     # quantize
     events *= fps
     # indices to be set in the quantized array
-    idx = np.unique(np.round(events).astype(np.int))
+    idx = np.unique(np.round(events).astype(int))
     quantized[idx] = 1
     # return the quantized array
     return quantized

@@ -94,7 +94,7 @@ def adjust_gain(signal, gain):
     # convert the gain in dB to a scaling factor
     gain = np.power(np.sqrt(10.), 0.1 * gain)
     # prevent overflow and clipping
-    if gain > 1 and np.issubdtype(signal.dtype, np.int):
+    if gain > 1 and np.issubdtype(signal.dtype, int):
         raise ValueError('positive gain adjustments are only supported for '
                          'float dtypes.')
     # Note: np.asanyarray returns the signal's ndarray subclass
@@ -155,7 +155,7 @@ def normalize(signal):
     """
     # scaling factor to be applied
     scaling = float(np.max(np.abs(signal)))
-    if np.issubdtype(signal.dtype, np.int):
+    if np.issubdtype(signal.dtype, int):
         if signal.dtype in (np.int16, np.int32):
             scaling /= np.iinfo(signal.dtype).max
         else:
@@ -273,12 +273,12 @@ def rescale(signal, dtype=np.float32):
 
     """
     # allow only float dtypes
-    if not np.issubdtype(dtype, np.float):
+    if not np.issubdtype(dtype, float):
         raise ValueError('only float dtypes are supported, not %s.' % dtype)
     # float signals don't need rescaling
-    if np.issubdtype(signal.dtype, np.float):
+    if np.issubdtype(signal.dtype, float):
         return signal.astype(dtype)
-    elif np.issubdtype(signal.dtype, np.int):
+    elif np.issubdtype(signal.dtype, int):
         return signal.astype(dtype) / np.iinfo(signal.dtype).max
     else:
         # TODO: not sure if this can happen or not. Either add the
@@ -353,8 +353,8 @@ def energy(signal):
     if np.iscomplex(signal).any():
         signal = np.abs(signal)
     # Note: type conversion needed because of integer overflows
-    if signal.dtype != np.float:
-        signal = signal.astype(np.float)
+    if signal.dtype != float:
+        signal = signal.astype(float)
     # return energy
     return np.dot(signal.flatten(), signal.flatten())
 
@@ -1578,7 +1578,7 @@ class Stream(object):
         # get the desired number of samples (block until all are present)
         data = self.stream.read(self.hop_size, exception_on_overflow=False)
         # convert it to a numpy array
-        data = np.fromstring(data, 'float32').astype(self.dtype, copy=False)
+        data = np.frombuffer(data, 'float32').astype(self.dtype)
         # buffer the data (i.e. append hop_size samples and rotate)
         data = self.buffer(data)
         # wrap the last frame_size samples as a Signal

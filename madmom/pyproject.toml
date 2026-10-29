@@ -1,0 +1,4 @@
+[build-system]
+# setup.py imports Cython and numpy to compile the .pyx extensions, so pip needs them in the build environment
+requires = ["setuptools>=68", "cython>=3.0", "numpy>=1.26"]
+build-backend = "setuptools.build_meta"
